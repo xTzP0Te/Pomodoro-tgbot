@@ -26,7 +26,8 @@ COPY --from=builder /opt/venv /opt/venv
 
 # Установка переменных окружения
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONPATH="/opt/venv/lib/python3.11/site-packages"
+    PYTHONPATH="/opt/venv/lib/python3.11/site-packages" \
+    PATH="/opt/venv/bin:$PATH"
 
 # Копирование кода приложения
 COPY --chown=nonroot:nonroot main.py /app/main.py
@@ -37,6 +38,5 @@ WORKDIR /app
 USER nonroot
 
 # Запуск приложения
-# Используем системный Python из Distroless, но с путями к venv
-CMD ["/usr/bin/python3.11", "/app/main.py"]
-
+# В Distroless Python образе ENTRYPOINT уже указывает на python
+CMD ["main.py"]
