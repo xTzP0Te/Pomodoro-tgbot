@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  pomodoro-bot:
+    image: ghcr.io/xtzp0te/pomodoro:${IMAGE_TAG:-latest}
+    container_name: pomodoro-tgbot
+    restart: unless-stopped
+    
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import sys; sys.exit(0)'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
