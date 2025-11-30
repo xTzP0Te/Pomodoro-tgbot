@@ -320,15 +320,15 @@ async def cmd_stats(message: Message):
     user_id = message.from_user.id
     stats = get_user_stats(user_id)
     intervals = get_user_intervals(user_id)
+    pomodoro_min = intervals['pomodoro'] // 60
+    short_min = intervals['short_break'] // 60
+    long_min = intervals['long_break'] // 60
     stats_text = (
         f"📊 Ваша статистика:\n\n"
         f"🍅 Завершено Pomodoro: {stats['pomodoros']}\n"
         f"☕ Коротких перерывов: {stats['short_breaks']}\n"
         f"🌴 Длинных перерывов: {stats['long_breaks']}\n\n"
         f"⚙️ Текущие настройки:\n"
-        pomodoro_min = intervals['pomodoro'] // 60
-        short_min = intervals['short_break'] // 60
-        long_min = intervals['long_break'] // 60
         f"• Pomodoro: {pomodoro_min} мин\n"
         f"• Короткий перерыв: {short_min} мин\n"
         f"• Длинный перерыв: {long_min} мин\n"
@@ -383,10 +383,10 @@ async def set_pomodoro_interval(callback: CallbackQuery, state: FSMContext):
         return
     
     intervals = get_user_intervals(user_id)
+    pomodoro_min = intervals['pomodoro'] // 60
     await callback.answer()
     await callback.message.edit_text(
         f"🍅 Настройка интервала Pomodoro\n\n"
-        pomodoro_min = intervals['pomodoro'] // 60
         f"Текущее значение: {pomodoro_min} минут\n\n"
         f"Введите новое значение в минутах (число):",
         reply_markup=get_settings_keyboard()
@@ -404,10 +404,10 @@ async def set_short_break_interval(callback: CallbackQuery, state: FSMContext):
         return
     
     intervals = get_user_intervals(user_id)
+    short_min = intervals['short_break'] // 60
     await callback.answer()
     await callback.message.edit_text(
         f"☕ Настройка интервала короткого перерыва\n\n"
-        short_min = intervals['short_break'] // 60
         f"Текущее значение: {short_min} минут\n\n"
         f"Введите новое значение в минутах (число):",
         reply_markup=get_settings_keyboard()
@@ -425,10 +425,10 @@ async def set_long_break_interval(callback: CallbackQuery, state: FSMContext):
         return
     
     intervals = get_user_intervals(user_id)
+    long_min = intervals['long_break'] // 60
     await callback.answer()
     await callback.message.edit_text(
         f"🌴 Настройка интервала длинного перерыва\n\n"
-        long_min = intervals['long_break'] // 60
         f"Текущее значение: {long_min} минут\n\n"
         f"Введите новое значение в минутах (число):",
         reply_markup=get_settings_keyboard()
@@ -446,9 +446,8 @@ async def process_pomodoro_interval(message: Message, state: FSMContext):
             return
         
         intervals = get_user_intervals(message.from_user.id)
-        intervals['pomodoro'] = value
+        intervals['pomodoro'] = value * 60
         await message.answer(
-            intervals['pomodoro'] = value * 60
             f"✅ Интервал Pomodoro установлен: {value} минут",
             reply_markup=get_main_keyboard(message.from_user.id)
         )
@@ -467,9 +466,8 @@ async def process_short_break_interval(message: Message, state: FSMContext):
             return
         
         intervals = get_user_intervals(message.from_user.id)
-        intervals['short_break'] = value
+        intervals['short_break'] = value * 60
         await message.answer(
-            intervals['short_break'] = value * 60
             f"✅ Интервал короткого перерыва установлен: {value} минут",
             reply_markup=get_main_keyboard(message.from_user.id)
         )
@@ -488,9 +486,8 @@ async def process_long_break_interval(message: Message, state: FSMContext):
             return
         
         intervals = get_user_intervals(message.from_user.id)
-        intervals['long_break'] = value
+        intervals['long_break'] = value * 60
         await message.answer(
-            intervals['long_break'] = value * 60
             f"✅ Интервал длинного перерыва установлен: {value} минут",
             reply_markup=get_main_keyboard(message.from_user.id)
         )
@@ -536,12 +533,12 @@ async def back_to_main(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     user_id = callback.from_user.id
     intervals = get_user_intervals(user_id)
+    pomodoro_min = intervals['pomodoro'] // 60
+    short_min = intervals['short_break'] // 60
+    long_min = intervals['long_break'] // 60
     text = (
         f"🍅 Главное меню\n\n"
         f"⚙️ Текущие настройки:\n"
-        pomodoro_min = intervals['pomodoro'] // 60
-        short_min = intervals['short_break'] // 60
-        long_min = intervals['long_break'] // 60
         f"• Pomodoro: {pomodoro_min} мин\n"
         f"• Короткий перерыв: {short_min} мин\n"
         f"• Длинный перерыв: {long_min} мин"
@@ -555,15 +552,15 @@ async def show_stats(callback: CallbackQuery):
     user_id = callback.from_user.id
     stats = get_user_stats(user_id)
     intervals = get_user_intervals(user_id)
+    pomodoro_min = intervals['pomodoro'] // 60
+    short_min = intervals['short_break'] // 60
+    long_min = intervals['long_break'] // 60
     stats_text = (
         f"📊 Ваша статистика:\n\n"
         f"🍅 Завершено Pomodoro: {stats['pomodoros']}\n"
         f"☕ Коротких перерывов: {stats['short_breaks']}\n"
         f"🌴 Длинных перерывов: {stats['long_breaks']}\n\n"
         f"⚙️ Текущие настройки:\n"
-        pomodoro_min = intervals['pomodoro'] // 60
-        short_min = intervals['short_break'] // 60
-        long_min = intervals['long_break'] // 60
         f"• Pomodoro: {pomodoro_min} мин\n"
         f"• Короткий перерыв: {short_min} мин\n"
         f"• Длинный перерыв: {long_min} мин\n"
