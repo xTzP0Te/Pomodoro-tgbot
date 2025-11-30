@@ -25,8 +25,8 @@ FROM gcr.io/distroless/python3-debian12:nonroot
 COPY --from=builder /opt/venv /opt/venv
 
 # Установка переменных окружения
-ENV PATH="/opt/venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH="/opt/venv/lib/python3.11/site-packages"
 
 # Копирование кода приложения
 COPY --chown=nonroot:nonroot main.py /app/main.py
@@ -37,6 +37,6 @@ WORKDIR /app
 USER nonroot
 
 # Запуск приложения
-# Используем python из venv явно
-CMD ["/opt/venv/bin/python", "main.py"]
+# Используем системный Python из Distroless, но с путями к venv
+CMD ["/usr/bin/python3.11", "/app/main.py"]
 
