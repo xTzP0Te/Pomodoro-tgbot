@@ -15,12 +15,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Константы Pomodoro
-# POMODORO_DURATION = 25 * 60  # 25 минут в секундах
-# SHORT_BREAK_DURATION = 5 * 60  # 5 минут в секундах
-# LONG_BREAK_DURATION = 15 * 60  # 15 минут в секундах
-POMODORO_DURATION = 25  # 25 минут в секундах
-SHORT_BREAK_DURATION = 5  # 5 минут в секундах
-LONG_BREAK_DURATION = 15 # 15 минут в секундах 
+POMODORO_DURATION = 25 * 60  # 25 минут в секундах
+SHORT_BREAK_DURATION = 5 * 60  # 5 минут в секундах
+LONG_BREAK_DURATION = 15 * 60  # 15 минут в секундах
 
 # Инициализация бота и диспетчера
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -75,9 +72,12 @@ def get_main_keyboard(user_id: int = None) -> InlineKeyboardMarkup:
     """Создать основную клавиатуру"""
     if user_id:
         intervals = get_user_intervals(user_id)
-        pomodoro_text = f"🍅 Настроить Pomodoro ({intervals['pomodoro']} сек)"
-        short_text = f"☕ Настроить короткий перерыв ({intervals['short_break']} сек)"
-        long_text = f"🌴 Настроить длинный перерыв ({intervals['long_break']} сек)"
+        pomodoro_min = intervals['pomodoro'] // 60
+        short_min = intervals['short_break'] // 60
+        long_min = intervals['long_break'] // 60
+        pomodoro_text = f"🍅 Настроить Pomodoro ({pomodoro_min} мин)"
+        short_text = f"☕ Настроить короткий перерыв ({short_min} мин)"
+        long_text = f"🌴 Настроить длинный перерыв ({long_min} мин)"
     else:
         pomodoro_text = "🍅 Настроить Pomodoro"
         short_text = "☕ Настроить короткий перерыв"
@@ -130,7 +130,7 @@ async def send_timer_update(chat_id: int, message_id: int, remaining_seconds: in
 async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: str, user_id: int, is_cycle: bool = False):
     """Запустить таймер"""
     remaining = duration
-    update_interval = 1  # Обновлять каждую секунду для тестирования
+    update_interval = 60  # Обновлять каждую минуту
     
     while remaining > 0:
         await asyncio.sleep(min(update_interval, remaining))
@@ -278,12 +278,15 @@ async def cmd_start(message: Message):
     """Обработчик команды /start"""
     user_id = message.from_user.id
     intervals = get_user_intervals(user_id)
+    pomodoro_min = intervals['pomodoro'] // 60
+    short_min = intervals['short_break'] // 60
+    long_min = intervals['long_break'] // 60
     welcome_text = (
         "🍅 Добро пожаловать в Pomodoro бота!\n\n"
         "Техника Pomodoro поможет вам повысить продуктивность:\n"
-        f"• 🍅 Pomodoro: {intervals['pomodoro']} секунд\n"
-        f"• ☕ Короткий перерыв: {intervals['short_break']} секунд\n"
-        f"• 🌴 Длинный перерыв: {intervals['long_break']} секунд\n\n"
+        f"• 🍅 Pomodoro: {pomodoro_min} минут\n"
+        f"• ☕ Короткий перерыв: {short_min} минут\n"
+        f"• 🌴 Длинный перерыв: {long_min} минут\n\n"
         "Используйте кнопки ниже для управления таймерами.\n"
         "Вы можете настроить интервалы по своему желанию!"
     )
@@ -323,9 +326,12 @@ async def cmd_stats(message: Message):
         f"☕ Коротких перерывов: {stats['short_breaks']}\n"
         f"🌴 Длинных перерывов: {stats['long_breaks']}\n\n"
         f"⚙️ Текущие настройки:\n"
-        f"• Pomodoro: {intervals['pomodoro']} сек\n"
-        f"• Короткий перерыв: {intervals['short_break']} сек\n"
-        f"• Длинный перерыв: {intervals['long_break']} сек\n"
+        pomodoro_min = intervals['pomodoro'] // 60
+        short_min = intervals['short_break'] // 60
+        long_min = intervals['long_break'] // 60
+        f"• Pomodoro: {pomodoro_min} мин\n"
+        f"• Короткий перерыв: {short_min} мин\n"
+        f"• Длинный перерыв: {long_min} мин\n"
     )
     
     if stats['pomodoros'] > 0:
@@ -380,8 +386,9 @@ async def set_pomodoro_interval(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_text(
         f"🍅 Настройка интервала Pomodoro\n\n"
-        f"Текущее значение: {intervals['pomodoro']} секунд\n\n"
-        f"Введите новое значение в секундах (число):",
+        pomodoro_min = intervals['pomodoro'] // 60
+        f"Текущее значение: {pomodoro_min} минут\n\n"
+        f"Введите новое значение в минутах (число):",
         reply_markup=get_settings_keyboard()
     )
     await state.set_state(PomodoroStates.waiting_for_pomodoro_interval)
@@ -400,8 +407,9 @@ async def set_short_break_interval(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_text(
         f"☕ Настройка интервала короткого перерыва\n\n"
-        f"Текущее значение: {intervals['short_break']} секунд\n\n"
-        f"Введите новое значение в секундах (число):",
+        short_min = intervals['short_break'] // 60
+        f"Текущее значение: {short_min} минут\n\n"
+        f"Введите новое значение в минутах (число):",
         reply_markup=get_settings_keyboard()
     )
     await state.set_state(PomodoroStates.waiting_for_short_break_interval)
@@ -420,8 +428,9 @@ async def set_long_break_interval(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.edit_text(
         f"🌴 Настройка интервала длинного перерыва\n\n"
-        f"Текущее значение: {intervals['long_break']} секунд\n\n"
-        f"Введите новое значение в секундах (число):",
+        long_min = intervals['long_break'] // 60
+        f"Текущее значение: {long_min} минут\n\n"
+        f"Введите новое значение в минутах (число):",
         reply_markup=get_settings_keyboard()
     )
     await state.set_state(PomodoroStates.waiting_for_long_break_interval)
@@ -439,7 +448,8 @@ async def process_pomodoro_interval(message: Message, state: FSMContext):
         intervals = get_user_intervals(message.from_user.id)
         intervals['pomodoro'] = value
         await message.answer(
-            f"✅ Интервал Pomodoro установлен: {value} секунд",
+            intervals['pomodoro'] = value * 60
+            f"✅ Интервал Pomodoro установлен: {value} минут",
             reply_markup=get_main_keyboard(message.from_user.id)
         )
         await state.clear()
@@ -459,7 +469,8 @@ async def process_short_break_interval(message: Message, state: FSMContext):
         intervals = get_user_intervals(message.from_user.id)
         intervals['short_break'] = value
         await message.answer(
-            f"✅ Интервал короткого перерыва установлен: {value} секунд",
+            intervals['short_break'] = value * 60
+            f"✅ Интервал короткого перерыва установлен: {value} минут",
             reply_markup=get_main_keyboard(message.from_user.id)
         )
         await state.clear()
@@ -479,7 +490,8 @@ async def process_long_break_interval(message: Message, state: FSMContext):
         intervals = get_user_intervals(message.from_user.id)
         intervals['long_break'] = value
         await message.answer(
-            f"✅ Интервал длинного перерыва установлен: {value} секунд",
+            intervals['long_break'] = value * 60
+            f"✅ Интервал длинного перерыва установлен: {value} минут",
             reply_markup=get_main_keyboard(message.from_user.id)
         )
         await state.clear()
@@ -527,9 +539,12 @@ async def back_to_main(callback: CallbackQuery, state: FSMContext):
     text = (
         f"🍅 Главное меню\n\n"
         f"⚙️ Текущие настройки:\n"
-        f"• Pomodoro: {intervals['pomodoro']} сек\n"
-        f"• Короткий перерыв: {intervals['short_break']} сек\n"
-        f"• Длинный перерыв: {intervals['long_break']} сек"
+        pomodoro_min = intervals['pomodoro'] // 60
+        short_min = intervals['short_break'] // 60
+        long_min = intervals['long_break'] // 60
+        f"• Pomodoro: {pomodoro_min} мин\n"
+        f"• Короткий перерыв: {short_min} мин\n"
+        f"• Длинный перерыв: {long_min} мин"
     )
     await callback.message.edit_text(text, reply_markup=get_main_keyboard(user_id))
 
@@ -546,9 +561,12 @@ async def show_stats(callback: CallbackQuery):
         f"☕ Коротких перерывов: {stats['short_breaks']}\n"
         f"🌴 Длинных перерывов: {stats['long_breaks']}\n\n"
         f"⚙️ Текущие настройки:\n"
-        f"• Pomodoro: {intervals['pomodoro']} сек\n"
-        f"• Короткий перерыв: {intervals['short_break']} сек\n"
-        f"• Длинный перерыв: {intervals['long_break']} сек\n"
+        pomodoro_min = intervals['pomodoro'] // 60
+        short_min = intervals['short_break'] // 60
+        long_min = intervals['long_break'] // 60
+        f"• Pomodoro: {pomodoro_min} мин\n"
+        f"• Короткий перерыв: {short_min} мин\n"
+        f"• Длинный перерыв: {long_min} мин\n"
     )
     
     if stats['pomodoros'] > 0:
