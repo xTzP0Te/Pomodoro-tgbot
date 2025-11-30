@@ -37,5 +37,6 @@ WORKDIR /app
 USER nonroot
 
 # Запуск приложения
-CMD ["main.py"]
+# Используем python из venv явно
+CMD ["/opt/venv/bin/python", "main.py"]
 
