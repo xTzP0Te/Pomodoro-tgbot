@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   pomodoro-bot:
-    image: ghcr.io/xtzp0te/pomodoro:${IMAGE_TAG:-latest}
+    image: ghcr.io/xtzp0te/pomodoro-tgbot:${IMAGE_TAG:-latest}
     container_name: pomodoro-tgbot
     restart: unless-stopped
     

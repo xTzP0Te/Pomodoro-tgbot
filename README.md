@@ -80,7 +80,7 @@ docker-compose down
 
 1. Получите образ из GitHub Container Registry:
 ```bash
-docker pull ghcr.io/xtzp0te/pomodoro:latest
+docker pull ghcr.io/xtzp0te/pomodoro-tgbot:0.0.1
 ```
 
 2. Запустите контейнер:
@@ -89,7 +89,7 @@ docker run -d \
   --name pomodoro-bot \
   --restart unless-stopped \
   -e BOT_TOKEN=ваш_токен_бота \
-  ghcr.io/xtzp0te/pomodoro:latest
+  ghcr.io/xtzp0te/pomodoro-tgbot:0.0.1
 ```
 
 ## 🎮 Использование
@@ -132,8 +132,8 @@ docker run -d \
 ### Образы
 
 Образы доступны в GitHub Container Registry:
-- `ghcr.io/xtzp0te/pomodoro:latest` - последняя версия
-- `ghcr.io/xtzp0te/pomodoro:v1.0.0` - конкретная версия
+- `ghcr.io/xtzp0te/pomodoro-tgbot:latest` - последняя версия
+- `ghcr.io/xtzp0te/pomodoro-tgbot:0.0.1` - конкретная версия
 
 ### Лимиты ресурсов
 
