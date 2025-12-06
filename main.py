@@ -110,24 +110,30 @@ def get_stop_keyboard() -> InlineKeyboardMarkup:
     return keyboard
 
 
-async def send_timer_update(chat_id: int, message_id: int, remaining_seconds: int, timer_type: str):
+async def send_timer_update(chat_id: int, message_id: int, remaining_seconds: int, timer_type: str, motivational_text: str = ""):
     """Отправить обновление таймера"""
     time_str = format_time(remaining_seconds)
     emoji = "🍅" if timer_type == "pomodoro" else "☕" if timer_type == "short_break" else "🌴"
     type_name = "Pomodoro" if timer_type == "pomodoro" else "Короткий перерыв" if timer_type == "short_break" else "Длинный перерыв"
     
+    # Формируем текст с подбадривающим сообщением, если оно есть
+    if motivational_text:
+        text = f"{emoji} {type_name}\n\n⏱ Осталось времени: {time_str}\n\n{motivational_text}"
+    else:
+        text = f"{emoji} {type_name}\n\n⏱ Осталось времени: {time_str}"
+    
     try:
         await bot.edit_message_text(
             chat_id=chat_id,
             message_id=message_id,
-            text=f"{emoji} {type_name}\n\n⏱ Осталось времени: {time_str}",
+            text=text,
             reply_markup=get_stop_keyboard()
         )
     except Exception:
         pass  # Игнорируем ошибки редактирования (например, если сообщение уже было изменено)
 
 
-async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: str, user_id: int, is_cycle: bool = False, notification_message_id: int = None):
+async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: str, user_id: int, is_cycle: bool = False, notification_message_id: int = None, motivational_text: str = ""):
     """Запустить таймер"""
     remaining = duration
     update_interval = 1  # Обновлять каждую секунду для отображения обратного отсчета
@@ -136,14 +142,14 @@ async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: st
     target_message_id = notification_message_id if notification_message_id else message_id
     
     # Отправляем начальное обновление таймера
-    await send_timer_update(chat_id, target_message_id, remaining, timer_type)
+    await send_timer_update(chat_id, target_message_id, remaining, timer_type, motivational_text)
     
     while remaining > 0:
         await asyncio.sleep(min(update_interval, remaining))
         remaining -= min(update_interval, remaining)
         
         if remaining > 0:
-            await send_timer_update(chat_id, target_message_id, remaining, timer_type)
+            await send_timer_update(chat_id, target_message_id, remaining, timer_type, motivational_text)
     
     # Таймер завершен
     emoji = "🍅" if timer_type == "pomodoro" else "☕" if timer_type == "short_break" else "🌴"
@@ -217,14 +223,17 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
             # Для первого Pomodoro используем первое уведомление, для остальных - новое
             if pomodoro_count == 1:
                 notification_id = first_notification.message_id
+                motivational_text = "💪 Готовы работать продуктивно?"
             elif notification_msg:
                 notification_id = notification_msg.message_id
+                motivational_text = "💪 Время сосредоточиться и работать продуктивно!"
             else:
                 notification_id = None
+                motivational_text = ""
             
             is_first_pomodoro = False
             
-            await run_timer(chat_id, message_id, intervals['pomodoro'], "pomodoro", user_id, is_cycle=True, notification_message_id=notification_id)
+            await run_timer(chat_id, message_id, intervals['pomodoro'], "pomodoro", user_id, is_cycle=True, notification_message_id=notification_id, motivational_text=motivational_text)
             
             # Проверяем, не остановлен ли цикл
             if user_id not in active_cycles:
@@ -250,7 +259,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
             )
             
             # Обновляем только уведомление с таймером, главное сообщение не трогаем
-            await run_timer(chat_id, message_id, break_duration, break_type, user_id, is_cycle=True, notification_message_id=notification.message_id)
+            await run_timer(chat_id, message_id, break_duration, break_type, user_id, is_cycle=True, notification_message_id=notification.message_id, motivational_text="😌 Расслабьтесь и восстановите силы!")
             
             # Проверяем, не остановлен ли цикл
             if user_id not in active_cycles:
