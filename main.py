@@ -357,12 +357,15 @@ async def start_full_cycle_handler(callback: CallbackQuery):
     await callback.answer("🔄 Полный цикл Pomodoro запущен!")
     
     intervals = get_user_intervals(user_id)
+    pomodoro_min = intervals['pomodoro'] // 60
+    short_min = intervals['short_break'] // 60
+    long_min = intervals['long_break'] // 60
     message = await callback.message.edit_text(
         f"🔄 Полный цикл Pomodoro запущен!\n\n"
         f"⚙️ Настройки:\n"
-        f"• Pomodoro: {intervals['pomodoro']} сек\n"
-        f"• Короткий перерыв: {intervals['short_break']} сек\n"
-        f"• Длинный перерыв: {intervals['long_break']} сек\n\n"
+        f"• Pomodoro: {pomodoro_min} мин\n"
+        f"• Короткий перерыв: {short_min} мин\n"
+        f"• Длинный перерыв: {long_min} мин\n\n"
         f"Цикл будет работать до остановки.",
         reply_markup=None
     )
