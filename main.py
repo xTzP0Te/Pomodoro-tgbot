@@ -127,10 +127,17 @@ async def send_timer_update(chat_id: int, message_id: int, remaining_seconds: in
         pass  # Игнорируем ошибки редактирования (например, если сообщение уже было изменено)
 
 
-async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: str, user_id: int, is_cycle: bool = False):
+async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: str, user_id: int, is_cycle: bool = False, notification_message_id: int = None):
     """Запустить таймер"""
     remaining = duration
-    update_interval = 60  # Обновлять каждую минуту
+    update_interval = 1  # Обновлять каждую секунду для отображения обратного отсчета
+    
+    # Отправляем начальное обновление таймера
+    await send_timer_update(chat_id, message_id, remaining, timer_type)
+    
+    # Если есть уведомление, обновляем его тоже
+    if notification_message_id:
+        await send_timer_update(chat_id, notification_message_id, remaining, timer_type)
     
     while remaining > 0:
         await asyncio.sleep(min(update_interval, remaining))
@@ -138,6 +145,9 @@ async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: st
         
         if remaining > 0:
             await send_timer_update(chat_id, message_id, remaining, timer_type)
+            # Обновляем уведомление тоже, если оно есть
+            if notification_message_id:
+                await send_timer_update(chat_id, notification_message_id, remaining, timer_type)
     
     # Таймер завершен
     emoji = "🍅" if timer_type == "pomodoro" else "☕" if timer_type == "short_break" else "🌴"
@@ -191,9 +201,9 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
     
     try:
         # Уведомление о начале цикла
-        await bot.send_message(
+        first_notification = await bot.send_message(
             chat_id=chat_id,
-            text=f"🔔 **ЦИКЛ ПОМОДОРО ЗАПУЩЕН!**\n\n🍅 Первый Pomodoro начинается!\n\n💪 Готовы работать продуктивно?",
+            text=f"🔔 **ЦИКЛ ПОМОДОРО ЗАПУЩЕН!**\n\n🍅 Первый Pomodoro начинается!\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}\n\n💪 Готовы работать продуктивно?",
             reply_markup=get_stop_keyboard()
         )
         
@@ -201,14 +211,13 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
             pomodoro_count += 1
             
             # Уведомление о начале Pomodoro (кроме первого)
+            notification_msg = None
             if not is_first_pomodoro:
-                await bot.send_message(
+                notification_msg = await bot.send_message(
                     chat_id=chat_id,
-                    text=f"🔔 **НАЧАЛО РАБОТЫ!**\n\n🍅 Pomodoro #{pomodoro_count} начинается!\n\n💪 Время сосредоточиться и работать продуктивно!",
+                    text=f"🔔 **НАЧАЛО РАБОТЫ!**\n\n🍅 Pomodoro #{pomodoro_count} начинается!\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}\n\n💪 Время сосредоточиться и работать продуктивно!",
                     reply_markup=get_stop_keyboard()
                 )
-            is_first_pomodoro = False
-            
             # Pomodoro сессия
             await bot.edit_message_text(
                 chat_id=chat_id,
@@ -216,7 +225,17 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
                 text=f"🔄 Полный цикл Pomodoro\n\n🍅 Pomodoro #{pomodoro_count}/∞\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}"
             )
             
-            await run_timer(chat_id, message_id, intervals['pomodoro'], "pomodoro", user_id, is_cycle=True)
+            # Для первого Pomodoro используем первое уведомление, для остальных - новое
+            if pomodoro_count == 1:
+                notification_id = first_notification.message_id
+            elif notification_msg:
+                notification_id = notification_msg.message_id
+            else:
+                notification_id = None
+            
+            is_first_pomodoro = False
+            
+            await run_timer(chat_id, message_id, intervals['pomodoro'], "pomodoro", user_id, is_cycle=True, notification_message_id=notification_id)
             
             # Проверяем, не остановлен ли цикл
             if user_id not in active_cycles:
@@ -237,7 +256,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
             # Уведомление о начале перерыва
             notification = await bot.send_message(
                 chat_id=chat_id,
-                text=f"🔔 **ВРЕМЯ ОТДЫХАТЬ!**\n\n{break_emoji} {break_name} после Pomodoro #{pomodoro_count}\n\n😌 Расслабьтесь и восстановите силы!",
+                text=f"🔔 **ВРЕМЯ ОТДЫХАТЬ!**\n\n{break_emoji} {break_name} после Pomodoro #{pomodoro_count}\n\n⏱ Осталось времени: {format_time(break_duration)}\n\n😌 Расслабьтесь и восстановите силы!",
                 reply_markup=get_stop_keyboard()
             )
             
@@ -247,7 +266,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
                 text=f"🔄 Полный цикл Pomodoro\n\n{break_emoji} {break_name} после Pomodoro #{pomodoro_count}\n\n⏱ Осталось времени: {format_time(break_duration)}"
             )
             
-            await run_timer(chat_id, message_id, break_duration, break_type, user_id, is_cycle=True)
+            await run_timer(chat_id, message_id, break_duration, break_type, user_id, is_cycle=True, notification_message_id=notification.message_id)
             
             # Проверяем, не остановлен ли цикл
             if user_id not in active_cycles:
