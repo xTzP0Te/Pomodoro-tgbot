@@ -121,7 +121,7 @@ async def send_timer_update(chat_id: int, message_id: int, remaining_seconds: in
             chat_id=chat_id,
             message_id=message_id,
             text=f"{emoji} {type_name}\n\n⏱ Осталось времени: {time_str}",
-            reply_markup=None
+            reply_markup=get_stop_keyboard()
         )
     except Exception:
         pass  # Игнорируем ошибки редактирования (например, если сообщение уже было изменено)
@@ -132,22 +132,18 @@ async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: st
     remaining = duration
     update_interval = 1  # Обновлять каждую секунду для отображения обратного отсчета
     
-    # Отправляем начальное обновление таймера
-    await send_timer_update(chat_id, message_id, remaining, timer_type)
+    # Обновляем только уведомление, если оно есть, иначе основное сообщение
+    target_message_id = notification_message_id if notification_message_id else message_id
     
-    # Если есть уведомление, обновляем его тоже
-    if notification_message_id:
-        await send_timer_update(chat_id, notification_message_id, remaining, timer_type)
+    # Отправляем начальное обновление таймера
+    await send_timer_update(chat_id, target_message_id, remaining, timer_type)
     
     while remaining > 0:
         await asyncio.sleep(min(update_interval, remaining))
         remaining -= min(update_interval, remaining)
         
         if remaining > 0:
-            await send_timer_update(chat_id, message_id, remaining, timer_type)
-            # Обновляем уведомление тоже, если оно есть
-            if notification_message_id:
-                await send_timer_update(chat_id, notification_message_id, remaining, timer_type)
+            await send_timer_update(chat_id, target_message_id, remaining, timer_type)
     
     # Таймер завершен
     emoji = "🍅" if timer_type == "pomodoro" else "☕" if timer_type == "short_break" else "🌴"
@@ -218,13 +214,6 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
                     text=f"🔔 **НАЧАЛО РАБОТЫ!**\n\n🍅 Pomodoro #{pomodoro_count} начинается!\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}\n\n💪 Время сосредоточиться и работать продуктивно!",
                     reply_markup=get_stop_keyboard()
                 )
-            # Pomodoro сессия
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text=f"🔄 Полный цикл Pomodoro\n\n🍅 Pomodoro #{pomodoro_count}/∞\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}"
-            )
-            
             # Для первого Pomodoro используем первое уведомление, для остальных - новое
             if pomodoro_count == 1:
                 notification_id = first_notification.message_id
@@ -260,12 +249,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
                 reply_markup=get_stop_keyboard()
             )
             
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text=f"🔄 Полный цикл Pomodoro\n\n{break_emoji} {break_name} после Pomodoro #{pomodoro_count}\n\n⏱ Осталось времени: {format_time(break_duration)}"
-            )
-            
+            # Обновляем только уведомление с таймером, главное сообщение не трогаем
             await run_timer(chat_id, message_id, break_duration, break_type, user_id, is_cycle=True, notification_message_id=notification.message_id)
             
             # Проверяем, не остановлен ли цикл
