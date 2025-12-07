@@ -205,7 +205,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
         # Уведомление о начале цикла
         first_notification = await bot.send_message(
             chat_id=chat_id,
-            text=f"🔔 **ЦИКЛ ПОМОДОРО ЗАПУЩЕН!**\n\n🍅 Первый Pomodoro начинается!\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}\n\n💪 Готовы работать продуктивно?",
+            text=f"🔔 **ЦИКЛ ПОМОДОРО ЗАПУЩЕН!**\n\n🍅 Первый Pomodoro начинается!\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}\n\n💪  Время сосредоточиться и работать продуктивно!",
             reply_markup=get_stop_keyboard()
         )
         
@@ -223,7 +223,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
             # Для первого Pomodoro используем первое уведомление, для остальных - новое
             if pomodoro_count == 1:
                 notification_id = first_notification.message_id
-                motivational_text = "💪 Готовы работать продуктивно?"
+                motivational_text = "💪  Время сосредоточиться и работать продуктивно!"
             elif notification_msg:
                 notification_id = notification_msg.message_id
                 motivational_text = "💪 Время сосредоточиться и работать продуктивно!"
