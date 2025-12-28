@@ -136,20 +136,12 @@ async def send_timer_update(chat_id: int, message_id: int, remaining_seconds: in
 async def run_timer(chat_id: int, message_id: int, duration: int, timer_type: str, user_id: int, is_cycle: bool = False, notification_message_id: int = None, motivational_text: str = ""):
     """Запустить таймер"""
     remaining = duration
-    update_interval = 1  # Обновлять каждую секунду для отображения обратного отсчета
+    update_interval = 60  # Обновлять каждую минуту, чтобы не флудить
     
-    # Обновляем только уведомление, если оно есть, иначе основное сообщение
-    target_message_id = notification_message_id if notification_message_id else message_id
-    
-    # Отправляем начальное обновление таймера
-    await send_timer_update(chat_id, target_message_id, remaining, timer_type, motivational_text)
-    
+    # Просто ждем окончания таймера без обновлений
     while remaining > 0:
         await asyncio.sleep(min(update_interval, remaining))
         remaining -= min(update_interval, remaining)
-        
-        if remaining > 0:
-            await send_timer_update(chat_id, target_message_id, remaining, timer_type, motivational_text)
     
     # Таймер завершен
     emoji = "🍅" if timer_type == "pomodoro" else "☕" if timer_type == "short_break" else "🌴"
@@ -205,7 +197,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
         # Уведомление о начале цикла
         first_notification = await bot.send_message(
             chat_id=chat_id,
-            text=f"🔔 **ЦИКЛ ПОМОДОРО ЗАПУЩЕН!**\n\n🍅 Первый Pomodoro начинается!\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}\n\n💪  Время сосредоточиться и работать продуктивно!",
+            text=f"🔔 **ЦИКЛ ПОМОДОРО ЗАПУЩЕН!**\n\n🍅 Первый Pomodoro начинается!\n\n💪 Готовы работать продуктивно?",
             reply_markup=get_stop_keyboard()
         )
         
@@ -217,7 +209,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
             if not is_first_pomodoro:
                 notification_msg = await bot.send_message(
                     chat_id=chat_id,
-                    text=f"🔔 **НАЧАЛО РАБОТЫ!**\n\n🍅 Pomodoro #{pomodoro_count} начинается!\n\n⏱ Осталось времени: {format_time(intervals['pomodoro'])}\n\n💪 Время сосредоточиться и работать продуктивно!",
+                    text=f"🔔 **НАЧАЛО РАБОТЫ!**\n\n🍅 Pomodoro #{pomodoro_count} начинается!\n\n💪 Время сосредоточиться и работать продуктивно!",
                     reply_markup=get_stop_keyboard()
                 )
             # Для первого Pomodoro используем первое уведомление, для остальных - новое
@@ -254,7 +246,7 @@ async def run_full_cycle(chat_id: int, message_id: int, user_id: int):
             # Уведомление о начале перерыва
             notification = await bot.send_message(
                 chat_id=chat_id,
-                text=f"🔔 **ВРЕМЯ ОТДЫХАТЬ!**\n\n{break_emoji} {break_name} после Pomodoro #{pomodoro_count}\n\n⏱ Осталось времени: {format_time(break_duration)}\n\n😌 Расслабьтесь и восстановите силы!",
+                text=f"🔔 **ВРЕМЯ ОТДЫХАТЬ!**\n\n{break_emoji} {break_name} после Pomodoro #{pomodoro_count}\n\n😌 Расслабьтесь и восстановите силы!",
                 reply_markup=get_stop_keyboard()
             )
             
